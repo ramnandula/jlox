@@ -6,7 +6,7 @@ import java.util.List;
 import static com.craftinginterpreters.lox.TokenType.*;
 
 class Scanner {
-  private final String source;
+  private final String source; // raw source code
   private final List<Token> tokens = new ArrayList<>();
   private int start = 0; // first char in lexeme being scanned
   private int current = 0; // char currently being considered
@@ -30,7 +30,7 @@ class Scanner {
   }
 
   private void scanToken() {
-    char c = advance();
+    char c = advance(); // moves to the next char
 
     switch (c) {
       case '(':
@@ -92,11 +92,41 @@ class Scanner {
         break;
       case '\n':
         line++;
-
+        break;
+      case '"':
+        string();
+        break;
       default:
-        Lox.error(line, "Unexpected character.");
+        if (isDigit(c)) {
+          number();
+        } else {
+          Lox.error(line, "Unexpected character.");
+        }
         break;
     }
+  }
+
+  private void number() {
+
+  }
+
+  // string goes until ending quote
+  // supports multi-line strings
+  private void string() {
+    while (peek() != '"' && !isAtEnd()) {
+      if (peek() == '\n') {
+        line++;
+      }
+      advance();
+    }
+    if (isAtEnd()) {
+      Lox.error(line, "Unterminated string.");
+      return;
+    }
+    advance(); // closing quote
+    // trim surrounding quotes
+    String value = source.substring(start + 1, current - 1);
+    addToken(STRING, value);
   }
 
   // only consume character if it is expected
@@ -119,10 +149,16 @@ class Scanner {
     return source.charAt(current);
   }
 
+  private boolean isDigit(char c) {
+    return c >= '0' && c <= '9';
+  }
+
+  // moment cursor crosses last char of code
   private boolean isAtEnd() {
     return current >= source.length();
   }
 
+  // moves to next char
   private char advance() {
     return source.charAt(current++);
   }

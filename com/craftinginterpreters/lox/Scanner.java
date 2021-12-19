@@ -2,6 +2,7 @@ package com.craftinginterpreters.lox;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.Adler32;
 
 import static com.craftinginterpreters.lox.TokenType.*;
 
@@ -106,8 +107,20 @@ class Scanner {
     }
   }
 
+  // consume as many digits for integer part
+  // if there is dot, consume as many digits for fractional part
   private void number() {
-
+    while (isDigit(peek())) {
+      advance();
+    }
+    // look for fractional part
+    if (peek() == '.' && isDigit(peekNext())) {
+      advance(); // consume dot
+      while (isDigit(peek())) {
+        advance();
+      }
+    }
+    addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
   }
 
   // string goes until ending quote
@@ -147,6 +160,15 @@ class Scanner {
       return '\0';
     }
     return source.charAt(current);
+  }
+
+  // second char of lookahead
+  // don't consume dot until we see number after
+  private char peekNext() {
+    if (current + 1 >= source.length()) {
+      return '\0';
+    }
+    return source.charAt(current + 1);
   }
 
   private boolean isDigit(char c) {
